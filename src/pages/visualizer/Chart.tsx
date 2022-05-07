@@ -21,7 +21,6 @@ export function Chart({ title, playerNames, func, decimals }: ChartProps): JSX.E
     chart: {
       id: title,
       type: 'line',
-      height: 300,
       animations: {
         enabled: false,
       },
@@ -56,7 +55,7 @@ export function Chart({ title, playerNames, func, decimals }: ChartProps): JSX.E
 
   return (
     <Paper shadow="xs" p="xs" withBorder={true}>
-      <ReactApexChart options={options} series={series} />
+      <ReactApexChart options={options} series={series} height="300px" />
     </Paper>
   );
 }

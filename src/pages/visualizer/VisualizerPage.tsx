@@ -30,6 +30,9 @@ const funcRemainingOverageTime: ChartFunction = player => player.remainingOverag
 const funcShipyards: ChartFunction = player => player.shipyards.length;
 const funcFleets: ChartFunction = player => player.fleets.length;
 
+const funcTotalAssetWorth: ChartFunction = player =>
+  funcKoreTotal(player) + funcShipsTotal(player) * 10 + funcShipyards(player) * 50 * 10;
+
 export function VisualizerPage(): JSX.Element {
   const { classes } = useStyles();
 
@@ -74,6 +77,9 @@ export function VisualizerPage(): JSX.Element {
         </MediaQuery>
         <Grid.Col xs={12} md={3}>
           {playerCards[1]}
+        </Grid.Col>
+        <Grid.Col xs={12} md={6} offsetMd={3}>
+          <Chart title="Total asset worth" playerNames={playerNames} func={funcTotalAssetWorth} />
         </Grid.Col>
         <Grid.Col xs={12} md={4}>
           <Chart title="Total kore" playerNames={playerNames} func={funcKoreTotal} />
