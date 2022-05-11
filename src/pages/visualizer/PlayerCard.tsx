@@ -1,6 +1,7 @@
-import { createStyles, Paper, SimpleGrid, Space, Tabs, Title } from '@mantine/core';
+import { Badge, createStyles, Paper, SimpleGrid, Space, Tabs, Title } from '@mantine/core';
 import { IconCrown } from '@tabler/icons';
 import { useCallback, useMemo } from 'react';
+import { ParsedEpisode } from '../../models/episode/parsed';
 import { useStore } from '../../store';
 import { getPlayerColor } from '../../utils/colors';
 import { EntityList } from './EntityList';
@@ -16,6 +17,36 @@ const useStyles = createStyles(() => ({
     overflow: 'auto',
   },
 }));
+
+function getWinnerInfo(episode: ParsedEpisode, id: number): [won: boolean, reason: string | null] {
+  const lastStep = episode.steps[episode.steps.length - 1];
+
+  const me = lastStep.players[id];
+  const opponent = lastStep.players[id === 0 ? 1 : 0];
+
+  const meHasEntities = me.shipyards.length + me.fleets.length > 0;
+  const opponentHasEntities = opponent.shipyards.length + opponent.fleets.length > 0;
+
+  if (me.status === 'DONE' && opponent.status === 'ERROR') {
+    return [true, 'Winner by not crashing'];
+  } else if (me.status === 'ERROR' && opponent.status === 'DONE') {
+    return [false, null];
+  } else if (me.status === 'ERROR' && opponent.status === 'ERROR') {
+    return [true, 'Draw, both players crashed'];
+  } else if (meHasEntities && !opponentHasEntities) {
+    return [true, 'Winner by elimination'];
+  } else if (!meHasEntities && opponentHasEntities) {
+    return [false, null];
+  } else if (!meHasEntities && !opponentHasEntities) {
+    return [true, 'Draw, both players eliminated'];
+  } else if (me.reward > opponent.reward) {
+    return [true, 'Winner by kore'];
+  } else if (me.reward < opponent.reward) {
+    return [false, null];
+  } else {
+    return [true, 'Draw, both players have same kore'];
+  }
+}
 
 function sortById(a: { id: string }, b: { id: string }): number {
   const [primaryA, subA] = a.id.split('-').map(value => parseInt(value));
@@ -42,9 +73,7 @@ export function PlayerCard({ id, name }: PlayerCardProps): JSX.Element {
 
   const player = episode.steps[turn].players[id];
 
-  const myReward = episode.rewards[id];
-  const opponentReward = episode.rewards[id === 0 ? 1 : 0];
-  const winner = myReward >= opponentReward;
+  const [isWinner, winnerReason] = getWinnerInfo(episode, id);
 
   const shipyardShips = player.shipyards.reduce((acc, val) => acc + val.ships, 0);
   const fleetShips = player.fleets.reduce((acc, val) => acc + val.ships, 0);
@@ -68,9 +97,11 @@ export function PlayerCard({ id, name }: PlayerCardProps): JSX.Element {
   return (
     <Paper shadow="xs" p="md" withBorder={true}>
       <Title order={3} style={{ color: getPlayerColor(id, 1.0) }}>
-        {winner && <IconCrown style={{ verticalAlign: 'top', paddingRight: '2px' }} />}
+        {isWinner && <IconCrown style={{ verticalAlign: 'top', marginRight: '2px' }} />}
         {name}
       </Title>
+
+      {isWinner && <Badge color={id === 0 ? 'blue' : 'red'}>{winnerReason}</Badge>}
 
       <Space h="xs" />
 
