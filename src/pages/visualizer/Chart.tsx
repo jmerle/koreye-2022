@@ -1,20 +1,21 @@
 import { Paper } from '@mantine/core';
 import { ApexOptions } from 'apexcharts';
 import ReactApexChart from 'react-apexcharts';
-import { Player } from '../../models/episode/parsed';
+import { ParsedEpisode } from '../../models/episode/parsed';
 import { useStore } from '../../store';
 import { getPlayerColor } from '../../utils/colors';
 
-export type ChartFunction = (player: Player) => number;
+export type ChartFunction = (episode: ParsedEpisode, step: number, player: number) => number;
 
 interface ChartProps {
   title: string;
   playerNames: [string, string];
   func: ChartFunction;
   decimals?: number;
+  step?: boolean;
 }
 
-export function Chart({ title, playerNames, func, decimals }: ChartProps): JSX.Element {
+export function Chart({ title, playerNames, func, decimals, step }: ChartProps): JSX.Element {
   const episode = useStore(state => state.episode)!;
 
   const options: ApexOptions = {
@@ -29,7 +30,8 @@ export function Chart({ title, playerNames, func, decimals }: ChartProps): JSX.E
       text: title,
     },
     stroke: {
-      width: 3,
+      width: 2,
+      curve: step ? 'stepline' : 'smooth',
     },
     xaxis: {
       type: 'numeric',
@@ -47,10 +49,10 @@ export function Chart({ title, playerNames, func, decimals }: ChartProps): JSX.E
     },
   };
 
-  const series: ApexOptions['series'] = playerNames.map((name, i) => ({
+  const series: ApexOptions['series'] = playerNames.map((name, playerIndex) => ({
     name,
-    data: episode.steps.map(step => func(step.players[i])),
-    color: getPlayerColor(i, 1.0),
+    data: episode.steps.map((step, stepIndex) => func(episode, stepIndex, playerIndex)),
+    color: getPlayerColor(playerIndex, 1.0),
   }));
 
   return (

@@ -18,20 +18,88 @@ const useStyles = createStyles(theme => ({
   },
 }));
 
-const funcKoreStored: ChartFunction = player => Math.floor(player.kore);
-const funcKoreFleets: ChartFunction = player => Math.floor(player.fleets.reduce((acc, val) => acc + val.kore, 0));
-const funcKoreTotal: ChartFunction = player => funcKoreStored(player) + funcKoreFleets(player);
+const funcKoreStored: ChartFunction = (episode, step, player) => {
+  return Math.floor(episode.steps[step].players[player].kore);
+};
 
-const funcShipsShipyards: ChartFunction = player => player.shipyards.reduce((acc, val) => acc + val.ships, 0);
-const funcShipsFleets: ChartFunction = player => player.fleets.reduce((acc, val) => acc + val.ships, 0);
-const funcShipsTotal: ChartFunction = player => funcShipsShipyards(player) + funcShipsFleets(player);
+const funcKoreFleets: ChartFunction = (episode, step, player) => {
+  return Math.floor(episode.steps[step].players[player].fleets.reduce((acc, val) => acc + val.kore, 0));
+};
 
-const funcRemainingOverageTime: ChartFunction = player => player.remainingOverageTime;
-const funcShipyards: ChartFunction = player => player.shipyards.length;
-const funcFleets: ChartFunction = player => player.fleets.length;
+const funcKoreTotal: ChartFunction = (episode, step, player) => {
+  return funcKoreStored(episode, step, player) + funcKoreFleets(episode, step, player);
+};
 
-const funcTotalAssetWorth: ChartFunction = player =>
-  funcKoreTotal(player) + funcShipsTotal(player) * 10 + funcShipyards(player) * 50 * 10;
+const funcShipsShipyards: ChartFunction = (episode, step, player) => {
+  return episode.steps[step].players[player].shipyards.reduce((acc, val) => acc + val.ships, 0);
+};
+
+const funcShipsFleets: ChartFunction = (episode, step, player) => {
+  return episode.steps[step].players[player].fleets.reduce((acc, val) => acc + val.ships, 0);
+};
+
+const funcShipsTotal: ChartFunction = (episode, step, player) => {
+  return funcShipsShipyards(episode, step, player) + funcShipsFleets(episode, step, player);
+};
+
+const funcRemainingOverageTime: ChartFunction = (episode, step, player) => {
+  return episode.steps[step].players[player].remainingOverageTime;
+};
+
+const funcShipyards: ChartFunction = (episode, step, player) => {
+  return episode.steps[step].players[player].shipyards.length;
+};
+
+const funcFleets: ChartFunction = (episode, step, player) => {
+  return episode.steps[step].players[player].fleets.length;
+};
+
+const funcTotalAssetWorth: ChartFunction = (episode, step, player) => {
+  const kore = funcKoreTotal(episode, step, player);
+  const ships = funcShipsTotal(episode, step, player) + 50 * funcShipyards(episode, step, player);
+  return kore + 10 * ships;
+};
+
+const funcMinedKore: ChartFunction = (episode, step, player) => {
+  if (step === 0) {
+    return 0;
+  }
+
+  let minedKore = 0;
+
+  for (const fleet of episode.steps[step].players[player].fleets) {
+    const koreBeforeMining = episode.steps[step - 1].kore[fleet.cell.y][fleet.cell.x];
+    const miningPercentage = Math.min(Math.log(fleet.ships) / 20, 0.99);
+
+    minedKore += koreBeforeMining * miningPercentage;
+  }
+
+  return minedKore;
+};
+
+const funcCombatDiff: ChartFunction = (episode, step, player) => {
+  if (step === 0) {
+    return 0;
+  }
+
+  const koreStoredPrev = episode.steps[step - 1].players[player].kore;
+  const koreFleetsPrev = episode.steps[step - 1].players[player].fleets.reduce((acc, val) => acc + val.kore, 0);
+  const korePrev = koreStoredPrev + koreFleetsPrev;
+
+  const koreStored = episode.steps[step].players[player].kore;
+  const koreFleets = episode.steps[step].players[player].fleets.reduce((acc, val) => acc + val.kore, 0);
+  const koreCurrent = koreStored + koreFleets;
+
+  const minedKore = funcMinedKore(episode, step, player);
+
+  const spawnCost = episode.steps[step].players[player].actions
+    .filter(action => action.type === 'spawn')
+    .reduce((acc, val) => acc + 10 * val.ships, 0);
+
+  const combatDiff = koreCurrent - korePrev - minedKore + spawnCost;
+
+  return Math.abs(combatDiff) < 0.1 ? 0 : combatDiff;
+};
 
 export function VisualizerPage(): JSX.Element {
   const { classes } = useStyles();
@@ -78,8 +146,11 @@ export function VisualizerPage(): JSX.Element {
         <Grid.Col xs={12} md={3}>
           {playerCards[1]}
         </Grid.Col>
-        <Grid.Col xs={12} md={6} offsetMd={3}>
+        <Grid.Col xs={12} md={6}>
           <Chart title="Total asset worth" playerNames={playerNames} func={funcTotalAssetWorth} />
+        </Grid.Col>
+        <Grid.Col xs={12} md={6}>
+          <Chart title="Kore gains/losses from combat" step={true} playerNames={playerNames} func={funcCombatDiff} />
         </Grid.Col>
         <Grid.Col xs={12} md={4}>
           <Chart title="Total kore" playerNames={playerNames} func={funcKoreTotal} />
@@ -102,16 +173,17 @@ export function VisualizerPage(): JSX.Element {
         <Grid.Col xs={12} md={4}>
           <Chart
             title="Remaining overage time"
+            step={true}
             playerNames={playerNames}
             func={funcRemainingOverageTime}
             decimals={3}
           />
         </Grid.Col>
         <Grid.Col xs={12} md={4}>
-          <Chart title="Total shipyards" playerNames={playerNames} func={funcShipyards} />
+          <Chart title="Total shipyards" step={true} playerNames={playerNames} func={funcShipyards} />
         </Grid.Col>
         <Grid.Col xs={12} md={4}>
-          <Chart title="Total fleets" playerNames={playerNames} func={funcFleets} />
+          <Chart title="Total fleets" step={true} playerNames={playerNames} func={funcFleets} />
         </Grid.Col>
       </Grid>
     </div>

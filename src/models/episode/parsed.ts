@@ -97,7 +97,7 @@ export function parseRawEpisode(rawEpisode: RawEpisode): ParsedEpisode {
       const row = [];
 
       for (let x = 0; x < CELLS_PER_SIDE; x++) {
-        row.push(stepParts[0].observation.kore![y * CELLS_PER_SIDE + x]);
+        row.push(stepParts[0].observation.kore![(CELLS_PER_SIDE - y - 1) * CELLS_PER_SIDE + x]);
       }
 
       kore.push(row);
