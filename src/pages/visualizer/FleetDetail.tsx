@@ -30,7 +30,7 @@ export function FleetDetail({ fleet }: FleetDetailProps): JSX.Element {
           <Text size="sm">Ships: {fleet.ships}</Text>
         </Grid.Col>
         <Grid.Col span={7}>
-          <Text size="sm">Kore: {fleet.kore}</Text>
+          <Text size="sm">Kore: {Math.floor(fleet.kore)}</Text>
         </Grid.Col>
       </Grid>
     </EntityCard>
