@@ -4,7 +4,7 @@
 
 [Koreye 2022](https://jmerle.github.io/koreye-2022/) is a visualizer for [Kore 2022](https://www.kaggle.com/competitions/kore-2022) episodes. It is available at [https://jmerle.github.io/koreye-2022/](https://jmerle.github.io/koreye-2022/).
 
-![](https://i.imgur.com/Goa1ltv.png)
+![](https://i.imgur.com/vkXFCWl.png)
 
 ## Development
 
