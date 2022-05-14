@@ -32,19 +32,25 @@ function getWinnerInfo(episode: ParsedEpisode, id: number): [won: boolean, reaso
   } else if (me.status === 'ERROR' && opponent.status === 'DONE') {
     return [false, null];
   } else if (me.status === 'ERROR' && opponent.status === 'ERROR') {
-    return [true, 'Draw, both players crashed'];
+    return [true, 'Draw, both crashed'];
+  } else if (me.status === 'DONE' && opponent.status === 'TIMEOUT') {
+    return [true, 'Winner by not timing out'];
+  } else if (me.status === 'TIMEOUT' && opponent.status === 'DONE') {
+    return [false, null];
+  } else if (me.status === 'TIMEOUT' && opponent.status === 'TIMEOUT') {
+    return [true, 'Draw, both timed out'];
   } else if (meHasEntities && !opponentHasEntities) {
     return [true, 'Winner by elimination'];
   } else if (!meHasEntities && opponentHasEntities) {
     return [false, null];
   } else if (!meHasEntities && !opponentHasEntities) {
-    return [true, 'Draw, both players eliminated'];
+    return [true, 'Draw, both eliminated'];
   } else if (me.reward > opponent.reward) {
     return [true, 'Winner by kore'];
   } else if (me.reward < opponent.reward) {
     return [false, null];
   } else {
-    return [true, 'Draw, both players have same kore'];
+    return [true, 'Draw, same kore'];
   }
 }
 
