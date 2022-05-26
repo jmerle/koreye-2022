@@ -17,6 +17,22 @@ export interface LaunchAction {
 
 export type Action = SpawnAction | LaunchAction;
 
+export interface FlightPlanTurnPart {
+  type: 'turn';
+  direction: Direction;
+}
+
+export interface FlightPlanMovePart {
+  type: 'move';
+  steps: number;
+}
+
+export interface FlightPlanConvertPart {
+  type: 'convert';
+}
+
+export type FlightPlanPart = FlightPlanTurnPart | FlightPlanMovePart | FlightPlanConvertPart;
+
 export interface Cell {
   x: number;
   y: number;
@@ -35,7 +51,7 @@ export interface Fleet {
   kore: number;
   ships: number;
   direction: Direction;
-  flightPlan: string;
+  flightPlan: FlightPlanPart[];
 }
 
 export interface Player {
@@ -88,6 +104,51 @@ export function getSpawnMaximum(shipyard: Shipyard): number {
   }
 }
 
+export function parseFlightPlan(flightPlan: string): FlightPlanPart[] {
+  const parts: FlightPlanPart[] = [];
+
+  for (let i = 0; i < flightPlan.length; i++) {
+    const ch = flightPlan[i];
+
+    switch (ch) {
+      case 'N':
+        parts.push({ type: 'turn', direction: Direction.NORTH });
+        break;
+      case 'E':
+        parts.push({ type: 'turn', direction: Direction.EAST });
+        break;
+      case 'S':
+        parts.push({ type: 'turn', direction: Direction.SOUTH });
+        break;
+      case 'W':
+        parts.push({ type: 'turn', direction: Direction.WEST });
+        break;
+      case 'C':
+        parts.push({ type: 'convert' });
+        break;
+      default:
+        if (/\d/.test(ch)) {
+          let steps = '';
+
+          for (let j = i; j < flightPlan.length; i++, j++) {
+            if (/\d/.test(flightPlan[i])) {
+              steps += flightPlan[i];
+            } else {
+              i--;
+              break;
+            }
+          }
+
+          parts.push({ type: 'move', steps: parseInt(steps) });
+        } else {
+          throw new Error(`Invalid flight plan character: ${ch}`);
+        }
+    }
+  }
+
+  return parts;
+}
+
 export function parseRawEpisode(rawEpisode: RawEpisode): ParsedEpisode {
   const parsedSteps: Step[] = [];
 
@@ -131,7 +192,7 @@ export function parseRawEpisode(rawEpisode: RawEpisode): ParsedEpisode {
           kore: rawFleet[1],
           ships: rawFleet[2],
           direction: rawFleet[3],
-          flightPlan: rawFleet[4],
+          flightPlan: parseFlightPlan(rawFleet[4]),
         });
       }
 

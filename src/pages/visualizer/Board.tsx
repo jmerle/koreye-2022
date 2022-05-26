@@ -248,39 +248,32 @@ function drawFlightPlan(
 
   let cell = fleet.cell;
   let direction = fleet.direction;
-  const flightPlan = fleet.flightPlan.split('');
+  const flightPlan = fleet.flightPlan.map(part => ({ ...part }));
 
   let shipyardGoal: Shipyard | undefined = undefined;
 
   while (true) {
+    while (flightPlan.length > 0 && flightPlan[0].type === 'move' && flightPlan[0].steps === 0) {
+      flightPlan.shift();
+    }
+
     if (flightPlan.length > 0) {
-      switch (flightPlan[0]) {
-        case 'N':
-          direction = Direction.NORTH;
+      switch (flightPlan[0].type) {
+        case 'turn':
+          direction = flightPlan[0].direction;
           flightPlan.shift();
           break;
-        case 'E':
-          direction = Direction.EAST;
-          flightPlan.shift();
+        case 'move':
+          if (flightPlan[0].steps === 1) {
+            flightPlan.shift();
+          } else {
+            flightPlan[0].steps--;
+          }
           break;
-        case 'S':
-          direction = Direction.SOUTH;
-          flightPlan.shift();
-          break;
-        case 'W':
-          direction = Direction.WEST;
-          flightPlan.shift();
-          break;
-        case 'C':
+        case 'convert':
           convertCells.push(cell);
           flightPlan.shift();
           break;
-        case '0':
-        case '1':
-          flightPlan.shift();
-          break;
-        default:
-          flightPlan[0] = (parseInt(flightPlan[0]) - 1).toString();
       }
     } else {
       if (seen.some(c => c.x === cell.x && c.y === cell.y)) {
