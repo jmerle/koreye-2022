@@ -82,13 +82,13 @@ const funcCombatDiff: ChartFunction = (episode, step, player) => {
     return 0;
   }
 
-  const koreStoredPrev = episode.steps[step - 1].players[player].kore;
-  const koreFleetsPrev = episode.steps[step - 1].players[player].fleets.reduce((acc, val) => acc + val.kore, 0);
-  const korePrev = koreStoredPrev + koreFleetsPrev;
+  const koreStoredPrevious = episode.steps[step - 1].players[player].kore;
+  const koreFleetsPrevious = episode.steps[step - 1].players[player].fleets.reduce((acc, val) => acc + val.kore, 0);
+  const korePrev = koreStoredPrevious + koreFleetsPrevious;
 
-  const koreStored = episode.steps[step].players[player].kore;
-  const koreFleets = episode.steps[step].players[player].fleets.reduce((acc, val) => acc + val.kore, 0);
-  const koreCurrent = koreStored + koreFleets;
+  const koreStoredCurrent = episode.steps[step].players[player].kore;
+  const koreFleetsCurrent = episode.steps[step].players[player].fleets.reduce((acc, val) => acc + val.kore, 0);
+  const koreCurrent = koreStoredCurrent + koreFleetsCurrent;
 
   const minedKore = funcMinedKore(episode, step, player);
 
@@ -96,7 +96,17 @@ const funcCombatDiff: ChartFunction = (episode, step, player) => {
     .filter(action => action.type === 'spawn')
     .reduce((acc, val) => acc + 10 * val.ships, 0);
 
-  const combatDiff = koreCurrent - korePrev - minedKore + spawnCost;
+  let combatDiff = koreCurrent - korePrev - minedKore + spawnCost;
+
+  const myShipyardsPrevious = episode.steps[step - 1].players[player].shipyards.map(s => s.cell);
+  const opponentShipyardsPrevious = episode.steps[step - 1].players[player === 0 ? 1 : 0].shipyards.map(s => s.cell);
+  const myShipyardsCurrent = episode.steps[step].players[player].shipyards.map(s => s.cell);
+  const opponentShipyardsCurrent = episode.steps[step].players[player === 0 ? 1 : 0].shipyards.map(s => s.cell);
+
+  combatDiff -=
+    500 * myShipyardsPrevious.filter(s1 => opponentShipyardsCurrent.some(s2 => s1.x === s2.x && s1.y === s2.y)).length;
+  combatDiff +=
+    500 * opponentShipyardsPrevious.filter(s1 => myShipyardsCurrent.some(s2 => s1.x === s2.x && s1.y === s2.y)).length;
 
   return Math.abs(combatDiff) < 0.1 ? 0 : combatDiff;
 };
@@ -150,7 +160,12 @@ export function VisualizerPage(): JSX.Element {
           <Chart title="Total asset worth" playerNames={playerNames} func={funcTotalAssetWorth} />
         </Grid.Col>
         <Grid.Col xs={12} md={6}>
-          <Chart title="Kore gains/losses from combat" step={true} playerNames={playerNames} func={funcCombatDiff} />
+          <Chart
+            title="Kore gains/losses from combat (1 shipyard = 500 kore)"
+            step={true}
+            playerNames={playerNames}
+            func={funcCombatDiff}
+          />
         </Grid.Col>
         <Grid.Col xs={12} md={4}>
           <Chart title="Total kore" playerNames={playerNames} func={funcKoreTotal} />
