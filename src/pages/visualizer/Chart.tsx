@@ -18,10 +18,28 @@ interface ChartProps {
 export function Chart({ title, playerNames, func, decimals, step }: ChartProps): JSX.Element {
   const episode = useStore(state => state.episode)!;
 
+  const exportFileName = title.replace(/\W/g, '_');
+
   const options: ApexOptions = {
     chart: {
       id: title,
       type: 'line',
+      zoom: {
+        autoScaleYaxis: true,
+      },
+      toolbar: {
+        export: {
+          csv: {
+            filename: exportFileName,
+          },
+          svg: {
+            filename: exportFileName,
+          },
+          png: {
+            filename: exportFileName,
+          },
+        },
+      },
       animations: {
         enabled: false,
       },
