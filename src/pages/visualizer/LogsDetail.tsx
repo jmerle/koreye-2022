@@ -16,7 +16,7 @@ export function LogsDetail({ player }: LogDetailProps): JSX.Element {
       {hasStdout && <Code block={true}>{player.stdout}</Code>}
       {hasStderr && <Text>Standard error:</Text>}
       {hasStderr && <Code block={true}>{player.stderr}</Code>}
-      {hasAuxiliaryActions && <Text>Auxiliary actions:</Text>}
+      {hasAuxiliaryActions && <Text>Non-shipyard action entries:</Text>}
       {hasAuxiliaryActions && <Code block={true}>{JSON.stringify(player.auxiliaryActions, null, 4)}</Code>}
       {!hasStdout && !hasStderr && !hasAuxiliaryActions && <Text>This player has no logs in this turn.</Text>}
     </Paper>
