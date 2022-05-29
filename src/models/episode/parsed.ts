@@ -242,7 +242,7 @@ export function parseRawEpisode(rawEpisode: RawEpisode, logs: Logs | null): Pars
 
         duration = hasLogs ? logItem?.duration || 0 : null;
         stdout = (logItem?.stdout || '').trimEnd();
-        stderr = (logItem?.stdout || '').trimEnd();
+        stderr = (logItem?.stderr || '').trimEnd();
       }
 
       players.push({
