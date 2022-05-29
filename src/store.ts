@@ -6,7 +6,6 @@ import { Logs } from './models/logs';
 
 export interface State {
   episode: ParsedEpisode | null;
-  logs: Logs | null;
 
   turn: number;
   speed: number;
@@ -28,7 +27,6 @@ export interface State {
 
 export const useStore = create<State>((set, get) => ({
   episode: null,
-  logs: null,
 
   turn: 1,
   selectedCell: null,
@@ -75,11 +73,10 @@ export const useStore = create<State>((set, get) => ({
       throw new Error('Invalid episode data');
     }
 
-    const parsedEpisode = parseRawEpisode(rawEpisode);
+    const parsedEpisode = parseRawEpisode(rawEpisode, logs);
 
     set({
       episode: parsedEpisode,
-      logs: logs ? logs.slice(2) : [],
       turn: 0,
       speed: 1,
     });

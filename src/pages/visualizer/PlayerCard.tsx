@@ -75,7 +75,6 @@ export function PlayerCard({ id, name }: PlayerCardProps): JSX.Element {
 
   const episode = useStore(state => state.episode)!;
   const turn = useStore(state => state.turn);
-  const logs = useStore(state => state.logs!.map(item => item[id]));
 
   const player = episode.steps[turn].players[id];
 
@@ -87,7 +86,7 @@ export function PlayerCard({ id, name }: PlayerCardProps): JSX.Element {
 
   const cargo = player.fleets.reduce((acc, val) => acc + val.kore, 0);
 
-  const duration = logs.length > 0 ? `${(logs[turn]?.duration || 0).toFixed(3)}s` : null;
+  const duration = player.duration ? `${player.duration.toFixed(3)}s` : null;
 
   const sortedShipyards = useMemo(() => player.shipyards.sort(sortById), [player]);
   const shipyardCellGetter = useCallback((index: number) => sortedShipyards[index].cell, [sortedShipyards]);
@@ -178,7 +177,7 @@ export function PlayerCard({ id, name }: PlayerCardProps): JSX.Element {
         </Tabs.Tab>
         <Tabs.Tab label="Logs">
           <div className={classes.tab}>
-            <LogsDetail logs={logs} />
+            <LogsDetail player={player} />
           </div>
         </Tabs.Tab>
       </Tabs>

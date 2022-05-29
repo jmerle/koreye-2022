@@ -1,4 +1,5 @@
 import { CELLS_PER_SIDE } from '../../constants';
+import { Logs } from '../logs';
 import { BaseEpisode, Direction } from './base';
 import { RawEpisode } from './raw';
 
@@ -62,6 +63,10 @@ export interface Player {
   reward: number;
   status: string;
   remainingOverageTime: number;
+  duration: number | null;
+  stdout: string;
+  stderr: string;
+  auxiliaryActions: Record<string, any>;
 }
 
 export interface Step {
@@ -149,10 +154,12 @@ export function parseFlightPlan(flightPlan: string): FlightPlanPart[] {
   return parts;
 }
 
-export function parseRawEpisode(rawEpisode: RawEpisode): ParsedEpisode {
+export function parseRawEpisode(rawEpisode: RawEpisode, logs: Logs | null): ParsedEpisode {
   const parsedSteps: Step[] = [];
 
-  for (const stepParts of rawEpisode.steps) {
+  for (let step = 0; step < rawEpisode.steps.length; step++) {
+    const stepParts = rawEpisode.steps[step];
+
     const kore = [];
     for (let y = 0; y < CELLS_PER_SIDE; y++) {
       const row = [];
@@ -197,23 +204,45 @@ export function parseRawEpisode(rawEpisode: RawEpisode): ParsedEpisode {
       }
 
       const actions: Action[] = [];
-      for (const shipyardId of Object.keys(stepParts[i].action || {})) {
-        const actionParts = stepParts[i].action![shipyardId].split('_');
+      const auxiliaryActions: Record<string, any> = {};
 
-        if (actionParts[0] === 'SPAWN') {
-          actions.push({
-            type: 'spawn',
-            shipyardId,
-            ships: parseInt(actionParts[1]),
-          });
-        } else {
-          actions.push({
-            type: 'launch',
-            shipyardId,
-            ships: parseInt(actionParts[1]),
-            flightPlan: actionParts[2],
-          });
+      let duration: number | null = null;
+      let stdout = '';
+      let stderr = '';
+
+      if (step < rawEpisode.steps.length - 1) {
+        const rawActions = rawEpisode.steps[step + 1][i].action;
+        for (const shipyardId of Object.keys(rawActions || {})) {
+          if (!shipyards.some(shipyard => shipyard.id === shipyardId)) {
+            auxiliaryActions[shipyardId] = rawActions![shipyardId];
+            continue;
+          }
+
+          const actionParts = rawActions![shipyardId].split('_');
+          if (actionParts[0] === 'SPAWN') {
+            actions.push({
+              type: 'spawn',
+              shipyardId,
+              ships: parseInt(actionParts[1]),
+            });
+          } else {
+            actions.push({
+              type: 'launch',
+              shipyardId,
+              ships: parseInt(actionParts[1]),
+              flightPlan: actionParts[2],
+            });
+          }
         }
+
+        const hasLogs = logs !== null && logs.length > 0;
+
+        const logIndex = stepParts[0].observation.step! + 2;
+        const logItem = hasLogs && logIndex < logs?.length ? logs[logIndex][i] : null;
+
+        duration = hasLogs ? logItem?.duration || 0 : null;
+        stdout = (logItem?.stdout || '').trimEnd();
+        stderr = (logItem?.stdout || '').trimEnd();
       }
 
       players.push({
@@ -224,6 +253,10 @@ export function parseRawEpisode(rawEpisode: RawEpisode): ParsedEpisode {
         reward: stepParts[i].reward || 0,
         status: stepParts[i].status,
         remainingOverageTime: stepParts[i].observation.remainingOverageTime,
+        duration,
+        stdout,
+        stderr,
+        auxiliaryActions,
       });
     }
 

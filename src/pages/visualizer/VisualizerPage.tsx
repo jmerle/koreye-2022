@@ -92,7 +92,7 @@ const funcCombatDiff: ChartFunction = (episode, step, player) => {
 
   const minedKore = funcMinedKore(episode, step, player);
 
-  const spawnCost = episode.steps[step].players[player].actions
+  const spawnCost = episode.steps[step - 1].players[player].actions
     .filter(action => action.type === 'spawn')
     .reduce((acc, val) => acc + 10 * val.ships, 0);
 

@@ -1,26 +1,24 @@
 import { Code, Paper, Text } from '@mantine/core';
-import { LogItem } from '../../models/logs';
-import { useStore } from '../../store';
+import { Player } from '../../models/episode/parsed';
 
 interface LogDetailProps {
-  logs: LogItem[];
+  player: Player;
 }
 
-export function LogsDetail({ logs }: LogDetailProps): JSX.Element {
-  const turn = useStore(state => state.turn);
-
-  const hasLogs = logs.length > 0;
-  const stdout = (logs[turn]?.stdout || '').trimEnd();
-  const stderr = (logs[turn]?.stderr || '').trimEnd();
+export function LogsDetail({ player }: LogDetailProps): JSX.Element {
+  const hasStdout = player.stdout.length > 0;
+  const hasStderr = player.stderr.length > 0;
+  const hasAuxiliaryActions = Object.keys(player.auxiliaryActions).length > 0;
 
   return (
     <Paper>
-      {hasLogs && stdout.length > 0 && <Text>Standard output:</Text>}
-      {hasLogs && stdout.length > 0 && <Code block={true}>{stdout}</Code>}
-      {hasLogs && stderr.length > 0 && <Text>Standard error:</Text>}
-      {hasLogs && stderr.length > 0 && <Code block={true}>{stderr}</Code>}
-      {hasLogs && stdout.length === 0 && stderr.length === 0 && <Text>This player has no logs in this turn.</Text>}
-      {!hasLogs && <Text>Episode does not contain log data.</Text>}
+      {hasStdout && <Text>Standard output:</Text>}
+      {hasStdout && <Code block={true}>{player.stdout}</Code>}
+      {hasStderr && <Text>Standard error:</Text>}
+      {hasStderr && <Code block={true}>{player.stderr}</Code>}
+      {hasAuxiliaryActions && <Text>Auxiliary actions:</Text>}
+      {hasAuxiliaryActions && <Code block={true}>{JSON.stringify(player.auxiliaryActions, null, 4)}</Code>}
+      {!hasStdout && !hasStderr && !hasAuxiliaryActions && <Text>This player has no logs in this turn.</Text>}
     </Paper>
   );
 }
